@@ -1,0 +1,52 @@
+stages:
+  - build
+  - test
+  - deploy:build
+  - deploy
+  - notification
+
+cache:
+  paths:
+    - node_modules/
+
+# build:
+#   image: alpine:latest
+#   stage: build
+#   # services:
+#   #   - docker:19.03.12-dind
+#   before_script:
+#     - apk add --update nodejs npm
+#   script:
+#     - npm install
+#     - npm audit fix --force
+
+# test:
+#   image: alpine:latest
+#   stage: test
+#   before_script:
+#     - apk add --update nodejs npm
+#   variables:
+#     DB: postgres://$TEST_DB_USER:$TEST_DB_PASS@$TEST_DB_HOST:$TEST_DB_PORT/gudang
+#     PORT: 3600
+#     CORS_ORIGIN: "*"
+#     NODE_ENV: "development"
+#   script:
+#     - npm install
+#     - npm run test:dev
+#   artifacts:
+#     paths:
+#       - mochawesome-report/
+#     expire_in: 1 day
+
+deploy_release_dev_build:
+  image: docker:19.03.12
+  stage: build
+  only:
+    - release/development
+  services:
+    - docker:19.03.12-dind
+  script:
+    - docker login -u $ACCESS_USER -p $ACCESS_TOKEN $CI_REGISTRY
+    - docker build -t $CI_REGISTRY/$CI_PROJECT_PATH/$CI_PROJECT_NAME:latest-dev .
+    - docker push $CI_REGISTRY/$CI_PROJECT_PATH/$CI_PROJECT_NAME:latest-dev
+
